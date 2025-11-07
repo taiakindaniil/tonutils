@@ -59,6 +59,39 @@ class StonfiRouterV1:
                     raise Exception(f"Failed to get router address: {response.status}: {error_text}")
 
     @classmethod
+    async def simulate_swap(
+            cls,
+            offer_address: str,
+            ask_address: str,
+            amount: Union[int, float],
+            decimals: int = 9,
+            slippage_tolerance: int = 1,
+    ) -> str:
+        """ Simulate the swap using the STON.fi API to get the correct router address. """
+        url = "https://api.ston.fi/v1/swap/simulate"
+        headers = {"Accept": "application/json"}
+
+        params = {
+            "offer_address": offer_address,
+            "ask_address": ask_address,
+            "units": to_nano(amount, decimals),
+            "slippage_tolerance": slippage_tolerance,
+            "dex_v2": "false",
+            "dex_version": "1",
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, params=params, headers=headers) as response:
+                if response.status == 200:
+                    content = await response.json()
+                    return content
+                else:
+                    error_text = await response.text()
+                    if response.status == 404:
+                        raise ValueError(error_text)
+                    raise Exception(f"Failed to get router address: {response.status}: {error_text}")
+
+    @classmethod
     def build_swap_body(
             cls,
             user_wallet_address: Address,

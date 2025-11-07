@@ -13,7 +13,8 @@ async def get_stonfi_router_details(
         amount: Union[int, float],
         decimals: int,
         is_testnet: bool,
-) -> Tuple[int, Address, Address]:
+        slippage_tolerance: int = 1,
+) -> Tuple[int, Address, Address, int]:
     pton_v1 = PTONAddressesV1.TESTNET if is_testnet else PTONAddressesV1.MAINNET
     pton_v2 = PTONAddressesV2.TESTNET if is_testnet else PTONAddressesV2.MAINNET
 
@@ -25,11 +26,13 @@ async def get_stonfi_router_details(
         pton = pton_v2
         offer = resolve_pton_address(offer_address, pton)
         ask = resolve_pton_address(ask_address, pton)
-        router_address = await StonfiRouterV2.get_router_address(
+
+        result = await StonfiRouterV2.simulate_swap(
             offer_address=offer,
             ask_address=ask,
             amount=amount,
             decimals=decimals,
+            slippage_tolerance=slippage_tolerance,
         )
 
     except:
@@ -37,11 +40,16 @@ async def get_stonfi_router_details(
         pton = pton_v1
         offer = resolve_pton_address(offer_address, pton)
         ask = resolve_pton_address(ask_address, pton)
-        router_address = await StonfiRouterV1.get_router_address(
+
+        result = await StonfiRouterV1.simulate_swap(
             offer_address=offer,
             ask_address=ask,
             amount=amount,
             decimals=decimals,
+            slippage_tolerance=slippage_tolerance,
         )
+    router_address = result.get("router_address")
+    min_ask_amount = int(result.get("min_ask_units"))
+    ask_amount = int(result.get("ask_units"))
 
-    return version, Address(router_address), Address(pton)
+    return version, Address(router_address), Address(pton), min_ask_amount, ask_amount
