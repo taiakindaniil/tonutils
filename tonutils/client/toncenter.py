@@ -74,6 +74,8 @@ class ToncenterV2Client(Client):
         }
 
         result = await self._post(method=method, body=body)
+        if int(result.get("exit_code", -13)) == -13: # -13 unable to execute run getmethod
+            return RunGetMethodResult(self, None)
         return RunGetMethodResult(self, result["stack"]).parse_from_toncenter()
 
     async def send_message(self, boc: str) -> None:
@@ -230,6 +232,8 @@ class ToncenterV3Client(Client):
         }
 
         result = await self._post(method=method, body=body)
+        if int(result.get("exit_code", -13)) == -13: # -13 unable to execute run getmethod
+            return RunGetMethodResult(self, None)
         return RunGetMethodResult(self, result["stack"]).parse_from_toncenter()
 
     async def send_message(self, boc: str) -> None:
